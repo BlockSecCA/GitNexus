@@ -52,6 +52,12 @@ The project had zero tests. This fork adds:
 - **Guard test** that reads `analyze.ts` source and asserts the removed imports/references stay removed
 - **Integration test** that spawns the real MCP server over stdio (auto-skips if no indexed repos)
 
+### MCP defaults to local build
+
+The `.mcp.json` points at the local fork build (`node gitnexus/dist/cli/index.js mcp`) instead of `npx -y gitnexus@latest mcp`. This means anyone cloning the fork gets the modified server — not the upstream npm package that still includes the invasive behavior.
+
+The MCP server reads `~/.gitnexus/registry.json` and serves all indexed repos regardless of working directory, so it should also be registered globally (`claude mcp add --scope user`) for use across projects.
+
 ### Server refactor for testability
 
 `startMCPServer(backend)` was split into:
@@ -82,4 +88,5 @@ This lets tests connect an `InMemoryTransport` without spawning a process.
 | `analyze` modifies ~/.claude/hooks.json | Yes | No |
 | Agent skills delivered via | Static files on disk | MCP prompts |
 | MCP prompts | 2 | 6 |
+| `.mcp.json` server | `npx -y gitnexus@latest mcp` | Local build |
 | Test suite | None | Unit + integration |

@@ -42,7 +42,7 @@ beforeAll(async () => {
 
   transport = new StdioClientTransport({
     command: 'node',
-    args: [path.join(PROJECT_ROOT, 'dist', 'mcp.js')],
+    args: [path.join(PROJECT_ROOT, 'dist', 'cli', 'index.js'), 'mcp'],
     cwd: PROJECT_ROOT,
   });
 
