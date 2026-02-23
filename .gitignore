@@ -56,3 +56,13 @@ repomix-output*
 
 # Design docs (local only)
 docs/plans/
+
+# Sensitive files
+*.pem
+*.key
+credentials.json
+secrets.json
+config.local.json
+
+# Build cache
+.cache/
