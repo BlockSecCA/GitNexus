@@ -58,6 +58,12 @@ The `.mcp.json` points at the local fork build (`node gitnexus/dist/cli/index.js
 
 The MCP server reads `~/.gitnexus/registry.json` and serves all indexed repos regardless of working directory, so it should also be registered globally (`claude mcp add --scope user`) for use across projects.
 
+### Web UI git clone fix for non-localhost access
+
+Upstream's git clone proxy detection checks `window.location.hostname === 'localhost'` to decide whether to use the hosted Vercel proxy. When accessing the dev server via a LAN IP (e.g. from a headless machine), it falls through to `/api/proxy` which doesn't exist on Vite, breaking GitHub URL cloning entirely.
+
+This fork changes the check to `!window.location.hostname.endsWith('.vercel.app')` — any non-Vercel host uses the hosted proxy, only the actual deployment uses its own endpoint.
+
 ### Server refactor for testability
 
 `startMCPServer(backend)` was split into:
@@ -89,4 +95,5 @@ This lets tests connect an `InMemoryTransport` without spawning a process.
 | Agent skills delivered via | Static files on disk | MCP prompts |
 | MCP prompts | 2 | 6 |
 | `.mcp.json` server | `npx -y gitnexus@latest mcp` | Local build |
+| Web UI git clone via LAN IP | Broken (wrong proxy) | Works |
 | Test suite | None | Unit + integration |

@@ -26,7 +26,7 @@ const HOSTED_PROXY_URL = 'https://gitnexus.vercel.app/api/proxy';
  * - In production: uses the local /api/proxy endpoint
  */
 const createProxiedHttp = (): typeof http => {
-  const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const isDev = typeof window !== 'undefined' && !window.location.hostname.endsWith('.vercel.app');
   
   return {
     request: async (config) => {
