@@ -82,7 +82,13 @@
       "Bash(git -C /home/carlos/public/GitNexus diff .claude/settings.local.json)",
       "Bash(git -C /home/carlos/public/GitNexus log --oneline -5)",
       "Bash(git -C /home/carlos/public/GitNexus add:*)",
-      "Bash(git -C /home/carlos/public/GitNexus commit -m \"$\\(cat <<''EOF''\nAdd CLAUDE.md project docs, pre-commit hooks, and gitignore hardening\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git -C /home/carlos/public/GitNexus commit -m \"$\\(cat <<''EOF''\nAdd CLAUDE.md project docs, pre-commit hooks, and gitignore hardening\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(git stash pop:*)",
+      "Bash(git commit:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
