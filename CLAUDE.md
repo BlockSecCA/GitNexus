@@ -4,13 +4,13 @@
 
 ## Purpose
 
-Fork of [abhigyanpatwari/GitNexus](https://github.com/abhigyanpatwari/GitNexus). Graph-powered code intelligence for AI agents — indexes codebases into a knowledge graph, exposes via MCP tools. This fork removes invasive environment writes from `analyze`, serves agent skills as MCP prompts, fixes CUDA fallback, and adds a local server mode for the web UI.
+Fork of [abhigyanpatwari/GitNexus](https://github.com/abhigyanpatwari/GitNexus). Graph-powered code intelligence for AI agents — indexes codebases into a knowledge graph, exposes via MCP tools. This fork removes invasive environment writes from `analyze`, serves agent skills as MCP prompts, and fixes web UI LAN access.
 
 ## Origin
 
 - **Upstream**: `https://github.com/abhigyanpatwari/GitNexus.git` (origin remote)
 - **Type**: Fork — see `docs/FORK.md` for full divergence details
-- **What changed**: No env pollution from `analyze`, skills as MCP prompts (2→6), CUDA probe, local server onboarding, web UI LAN fix, test suite
+- **What changed**: No env pollution from `analyze`, skills as MCP prompts (2→6), web UI LAN fix, upstream build fixes, test suite
 
 ## Structure
 
@@ -54,11 +54,10 @@ gitnexus analyze
 # Start MCP server (stdio, used by Claude Code / Cursor)
 gitnexus mcp
 
-# Local server mode (API + web UI together)
-./gitnexus-local.sh start   # :4747 API, :5173 web UI
-./gitnexus-local.sh stop
+# Local backend mode (API server — web UI auto-detects)
+gitnexus serve              # :4747 REST API
 
-# Web UI dev server standalone
+# Web UI dev server (auto-connects to local backend if running)
 cd gitnexus-web && npm run dev
 ```
 
@@ -66,10 +65,9 @@ cd gitnexus-web && npm run dev
 
 ### CLI (`gitnexus/`)
 - `src/cli/index.ts` — CLI entry point (commander)
-- `src/core/analyze.ts` — Indexing pipeline
-- `src/mcp/server.ts` — MCP server setup + tool/resource/prompt handlers
-- `src/mcp/prompts.ts` — 6 MCP prompts (exploring, debugging, impact_analysis, refactoring, detect_impact, generate_map)
-- `src/server/` — Express HTTP server (`gitnexus serve`)
+- `src/cli/analyze.ts` — Analyze command (indexing pipeline)
+- `src/mcp/server.ts` — MCP server setup + tool/resource/prompt handlers (6 prompts)
+- `src/server/api.ts` — REST API for local backend mode (`gitnexus serve`)
 - `src/storage/` — KuzuDB backend, connection pool, registry
 - `src/lib/` — Parsing, graph construction, embeddings, search
 - `src/__tests__/` — vitest test suite
@@ -77,11 +75,11 @@ cd gitnexus-web && npm run dev
 ### Web UI (`gitnexus-web/`)
 - `src/App.tsx` — Main app component
 - `src/components/DropZone.tsx` — Onboarding (ZIP / GitHub / Local Server tabs)
-- `src/services/local-api.ts` — API client for local server mode
+- `src/services/backend.ts` — HTTP client for local backend mode
+- `src/hooks/useBackend.ts` — React hook for backend connection lifecycle
 
 ### Top-level
 - `docs/FORK.md` — Full divergence documentation
-- `gitnexus-local.sh` — Start/stop script for local servers
 - `.mcp.json` — Points to local build (not upstream npm)
 
 ## Tech Stack
@@ -106,28 +104,26 @@ cd gitnexus-web && npm run dev
 <!-- gitnexus:start -->
 ## GitNexus MCP
 
-This project is indexed by GitNexus as **GitnexusV2** (1348 symbols, 3469 relationships, 104 execution flows).
-
-GitNexus provides a knowledge graph over this codebase — call chains, blast radius, execution flows, and semantic search.
+This project is indexed by GitNexus. Use the MCP tools and prompts to navigate the knowledge graph.
 
 ### Always Start Here
 
-For any task involving code understanding, debugging, impact analysis, or refactoring:
-
 1. **Read `gitnexus://repo/{name}/context`** — codebase overview + check index freshness
-2. **Match your task to a skill below** and **read that skill file**
-3. **Follow the skill's workflow and checklist**
+2. **Use the appropriate MCP prompt** for guided workflows (exploring, debugging, impact_analysis, refactoring)
+3. **Or call tools directly** for specific queries
 
-> If step 1 warns the index is stale, run `npx gitnexus analyze` in the terminal first.
+> If the index is stale, run `gitnexus analyze` in the terminal first.
 
-### Skills
+### MCP Prompts (Guided Workflows)
 
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Task | MCP Prompt |
+|------|-----------|
+| Understand architecture / "How does X work?" | `exploring` |
+| Blast radius / "What breaks if I change X?" | `impact_analysis` |
+| Trace bugs / "Why is X failing?" | `debugging` |
+| Rename / extract / split / refactor | `refactoring` |
+| Pre-commit impact check | `detect_impact` |
+| Generate architecture docs | `generate_map` |
 
 ### Tools Reference
 
