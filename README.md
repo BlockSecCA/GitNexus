@@ -32,6 +32,8 @@ https://github.com/user-attachments/assets/172685ba-8e54-4ea7-9ad1-e31a3398da72
 
 
 
+> **This is a fork.** The indexing engine and MCP tools are unchanged. What changed: `analyze` no longer writes CLAUDE.md, AGENTS.md, skills, or hooks into your environment. Agent skills are now served as MCP prompts. See [docs/FORK.md](docs/FORK.md) for details.
+
 > *Like DeepWiki, but deeper.* DeepWiki helps you *understand* code. GitNexus lets you *analyze* it — because a knowledge graph tracks every relationship, not just descriptions.
 
 **TL;DR:** The **Web UI** is a quick way to chat with any repo. The **CLI + MCP** is how you make your AI agent actually reliable — it gives Cursor, Claude Code, and friends a deep architectural view of your codebase so they stop missing dependencies, breaking call chains, and shipping blind edits. Even smaller models get full architectural clarity, making it compete with goliath models.

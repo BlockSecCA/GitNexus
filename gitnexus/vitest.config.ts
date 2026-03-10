@@ -3,9 +3,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     globalSetup: ['test/global-setup.ts'],
-    include: ['test/**/*.test.ts'],
+    include: ['test/**/*.test.ts', 'src/__tests__/**/*.test.ts'],
     testTimeout: 30000,
-    pool: 'forks',
+    pool: 'forks', // native addons (tree-sitter, kuzu) need forks not threads
     globals: true,
     setupFiles: ['test/setup.ts'],
     teardownTimeout: 3000,
