@@ -57,6 +57,12 @@ repomix-output*
 # Design docs (local only)
 docs/plans/
 
-gitnexus/test/fixtures/mini-repo/*.md
-gitnexus/test/fixtures/mini-repo/.claude
-gitnexus/test/fixtures/mini-repo/.gitignore
+# Sensitive files
+*.pem
+*.key
+credentials.json
+secrets.json
+config.local.json
+
+# Build cache
+.cache/

@@ -1,78 +1,163 @@
+# GitNexus
+
+> PUBLIC REPO — No secrets, no PII, no internal references. Assume strangers read everything.
+
+## Purpose
+
+Fork of [abhigyanpatwari/GitNexus](https://github.com/abhigyanpatwari/GitNexus). Graph-powered code intelligence for AI agents — indexes codebases into a knowledge graph, exposes via MCP tools. This fork removes invasive environment writes from `analyze`, serves agent skills as MCP prompts, and fixes web UI LAN access.
+
+## Origin
+
+- **Upstream**: `https://github.com/abhigyanpatwari/GitNexus.git` (origin remote)
+- **Type**: Fork — see `docs/FORK.md` for full divergence details
+- **What changed**: No env pollution from `analyze`, skills as MCP prompts (2→6), web UI LAN fix, upstream build fixes, test suite
+
+## Structure
+
+This is a multi-package repo (no workspace manager):
+
+| Directory | What | Type |
+|-----------|------|------|
+| `gitnexus/` | CLI + MCP server | Node.js, TypeScript, MCP Server |
+| `gitnexus-web/` | Browser-based graph explorer + AI chat | React 18, Vite, Tailwind v4 |
+| `eval/` | Evaluation suite | Python |
+| `docs/` | Fork documentation | Markdown |
+| `gitnexus-claude-plugin/` | Claude Code integration assets (hooks, skills) | Static files |
+| `gitnexus-cursor-integration/` | Cursor integration assets | Static files |
+
+## Build
+
+```bash
+# CLI / MCP server
+cd gitnexus && npm install && npm run build
+
+# Web UI
+cd gitnexus-web && npm install && npm run build
+
+# Make CLI available globally (from gitnexus/)
+npm link
+```
+
+## Test
+
+```bash
+# CLI tests (vitest)
+cd gitnexus && npm test
+```
+
+## Run
+
+```bash
+# Index a repo (from that repo's root)
+gitnexus analyze
+
+# Start MCP server (stdio, used by Claude Code / Cursor)
+gitnexus mcp
+
+# Local backend mode (API server — web UI auto-detects)
+gitnexus serve              # :4747 REST API
+
+# Web UI dev server (auto-connects to local backend if running)
+cd gitnexus-web && npm run dev
+```
+
+## Key Files
+
+### CLI (`gitnexus/`)
+- `src/cli/index.ts` — CLI entry point (commander)
+- `src/cli/analyze.ts` — Analyze command (indexing pipeline)
+- `src/mcp/server.ts` — MCP server setup + tool/resource/prompt handlers (6 prompts)
+- `src/server/api.ts` — REST API for local backend mode (`gitnexus serve`)
+- `src/storage/` — KuzuDB backend, connection pool, registry
+- `src/lib/` — Parsing, graph construction, embeddings, search
+- `src/__tests__/` — vitest test suite
+
+### Web UI (`gitnexus-web/`)
+- `src/App.tsx` — Main app component
+- `src/components/DropZone.tsx` — Onboarding (ZIP / GitHub / Local Server tabs)
+- `src/services/backend.ts` — HTTP client for local backend mode
+- `src/hooks/useBackend.ts` — React hook for backend connection lifecycle
+
+### Top-level
+- `docs/FORK.md` — Full divergence documentation
+- `.mcp.json` — Points to local build (not upstream npm)
+
+## Tech Stack
+
+| Layer | CLI | Web |
+|-------|-----|-----|
+| Runtime | Node.js | Browser (WASM) |
+| Parsing | Tree-sitter native | Tree-sitter WASM |
+| Database | KuzuDB native | KuzuDB WASM |
+| Embeddings | transformers.js | transformers.js (WebGPU/WASM) |
+| Agent interface | MCP (stdio) | LangChain ReAct |
+| Visualization | — | Sigma.js + Graphology (WebGL) |
+
+## Practices
+
+- After corrections: "Update CLAUDE.md so you don't make that mistake again"
+- Keep `docs/notes/` for learnings that shouldn't bloat this file
+- Plan first for complex tasks; re-plan when things go sideways
+- This is a fork — when modifying, check whether the change diverges further from upstream or could be contributed back
+- Guard test (`analyze-no-pollution.test.ts`) prevents re-introducing invasive writes — keep it passing
+
 <!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+## GitNexus MCP
 
-This project is indexed by GitNexus as **GitNexus** (1650 symbols, 4291 relationships, 125 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus. Use the MCP tools and prompts to navigate the knowledge graph.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+### Always Start Here
 
-## Always Do
+1. **Read `gitnexus://repo/{name}/context`** — codebase overview + check index freshness
+2. **Use the appropriate MCP prompt** for guided workflows (exploring, debugging, impact_analysis, refactoring)
+3. **Or call tools directly** for specific queries
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+> If the index is stale, run `gitnexus analyze` in the terminal first.
 
-## When Debugging
+### MCP Prompts (Guided Workflows)
 
-1. `gitnexus_query({query: "<error or symptom>"})` — find execution flows related to the issue
-2. `gitnexus_context({name: "<suspect function>"})` — see all callers, callees, and process participation
-3. `READ gitnexus://repo/GitNexus/process/{processName}` — trace the full execution flow step by step
-4. For regressions: `gitnexus_detect_changes({scope: "compare", base_ref: "main"})` — see what your branch changed
+| Task | MCP Prompt |
+|------|-----------|
+| Understand architecture / "How does X work?" | `exploring` |
+| Blast radius / "What breaks if I change X?" | `impact_analysis` |
+| Trace bugs / "Why is X failing?" | `debugging` |
+| Rename / extract / split / refactor | `refactoring` |
+| Pre-commit impact check | `detect_impact` |
+| Generate architecture docs | `generate_map` |
 
-## When Refactoring
+### Tools Reference
 
-- **Renaming**: MUST use `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` first. Review the preview — graph edits are safe, text_search edits need manual review. Then run with `dry_run: false`.
-- **Extracting/Splitting**: MUST run `gitnexus_context({name: "target"})` to see all incoming/outgoing refs, then `gitnexus_impact({target: "target", direction: "upstream"})` to find all external callers before moving code.
-- After any refactor: run `gitnexus_detect_changes({scope: "all"})` to verify only expected files changed.
+| Tool | What it gives you |
+|------|-------------------|
+| `query` | Process-grouped code intelligence — execution flows related to a concept |
+| `context` | 360-degree symbol view — categorized refs, processes it participates in |
+| `impact` | Symbol blast radius — what breaks at depth 1/2/3 with confidence |
+| `detect_changes` | Git-diff impact — what do your current changes affect |
+| `rename` | Multi-file coordinated rename with confidence-tagged edits |
+| `cypher` | Raw graph queries (read `gitnexus://repo/{name}/schema` first) |
+| `list_repos` | Discover indexed repos |
 
-## Never Do
+### Resources Reference
 
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+Lightweight reads (~100-500 tokens) for navigation:
 
-## Tools Quick Reference
-
-| Tool | When to use | Command |
-|------|-------------|---------|
-| `query` | Find code by concept | `gitnexus_query({query: "auth validation"})` |
-| `context` | 360-degree view of one symbol | `gitnexus_context({name: "validateUser"})` |
-| `impact` | Blast radius before editing | `gitnexus_impact({target: "X", direction: "upstream"})` |
-| `detect_changes` | Pre-commit scope check | `gitnexus_detect_changes({scope: "staged"})` |
-| `rename` | Safe multi-file rename | `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` |
-| `cypher` | Custom graph queries | `gitnexus_cypher({query: "MATCH ..."})` |
-
-## Impact Risk Levels
-
-| Depth | Meaning | Action |
-|-------|---------|--------|
-| d=1 | WILL BREAK — direct callers/importers | MUST update these |
-| d=2 | LIKELY AFFECTED — indirect deps | Should test |
-| d=3 | MAY NEED TESTING — transitive | Test if critical path |
-
-## Resources
-
-| Resource | Use for |
+| Resource | Content |
 |----------|---------|
-| `gitnexus://repo/GitNexus/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/GitNexus/clusters` | All functional areas |
-| `gitnexus://repo/GitNexus/processes` | All execution flows |
-| `gitnexus://repo/GitNexus/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/{name}/context` | Stats, staleness check |
+| `gitnexus://repo/{name}/clusters` | All functional areas with cohesion scores |
+| `gitnexus://repo/{name}/cluster/{clusterName}` | Area members |
+| `gitnexus://repo/{name}/processes` | All execution flows |
+| `gitnexus://repo/{name}/process/{processName}` | Step-by-step trace |
+| `gitnexus://repo/{name}/schema` | Graph schema for Cypher |
 
-## Self-Check Before Finishing
+### Graph Schema
 
-Before completing any code modification task, verify:
-1. `gitnexus_impact` was run for all modified symbols
-2. No HIGH/CRITICAL risk warnings were ignored
-3. `gitnexus_detect_changes()` confirms changes match expected scope
-4. All d=1 (WILL BREAK) dependents were updated
+**Nodes:** File, Function, Class, Interface, Method, Community, Process
+**Edges (via CodeRelation.type):** CALLS, IMPORTS, EXTENDS, IMPLEMENTS, DEFINES, MEMBER_OF, STEP_IN_PROCESS
 
-## CLI
-
-- Re-index: `npx gitnexus analyze`
-- Check freshness: `npx gitnexus status`
-- Generate docs: `npx gitnexus wiki`
+```cypher
+MATCH (caller)-[:CodeRelation {type: 'CALLS'}]->(f:Function {name: "myFunc"})
+RETURN caller.name, caller.filePath
+```
 
 <!-- gitnexus:end -->
