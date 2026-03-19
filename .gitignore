@@ -17,8 +17,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-.claude/settings.local.json
-
 # Environment variables
 .env
 .env.local
@@ -35,11 +33,6 @@ coverage/
 *.local
 
 .vercel
-
-
-
-
-
 
 .env*.local
 .gitnexus
